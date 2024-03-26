@@ -117,7 +117,7 @@ func (c *TgApiClient) startConn(host string, port int) {
 	}
 }
 
-func (c *TgApiClient) SendMessage(botName string, text string, chatId int64, messageId int32) string {
+func (c *TgApiClient) sendMessage(botName string, chatId int64, text string, replyMsgId int32) string {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5) // 5초 타임아웃
 	defer cancel()
 
@@ -125,7 +125,7 @@ func (c *TgApiClient) SendMessage(botName string, text string, chatId int64, mes
 		BotName:          botName,
 		Text:             text,
 		ChatId:           chatId,
-		ReplyToMessageId: messageId,
+		ReplyToMessageId: replyMsgId,
 	})
 	if err != nil {
 		log.Fatalf("could not send message: %v", err)
@@ -133,7 +133,7 @@ func (c *TgApiClient) SendMessage(botName string, text string, chatId int64, mes
 	return r.GetMessage()
 }
 
-func (c *TgApiClient) SendKeyboard(botName string, text string, chatId int64, messageId int32, buttons []string, rowNum int32) string {
+func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32, replyMsgId int32) string {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -141,7 +141,7 @@ func (c *TgApiClient) SendKeyboard(botName string, text string, chatId int64, me
 		BotName:          botName,
 		Text:             text,
 		ChatId:           chatId,
-		ReplyToMessageId: messageId,
+		ReplyToMessageId: replyMsgId,
 		Buttons:          buttons,
 		RowNum:           rowNum,
 	})
@@ -149,4 +149,20 @@ func (c *TgApiClient) SendKeyboard(botName string, text string, chatId int64, me
 		log.Fatalf("could not send keyboard: %v", err)
 	}
 	return r.GetMessage()
+}
+
+func (c *TgApiClient) SendText(botName string, chatId int64, text string) string {
+	return c.sendMessage(botName, chatId, text, 0)
+}
+
+func (c *TgApiClient) SendReplyText(botName string, chatId int64, replyMsgId int32, text string) string {
+	return c.sendMessage(botName, chatId, text, replyMsgId)
+}
+
+func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32) string {
+	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, 0)
+}
+
+func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []string, rowNum int32) string {
+	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, replyMsgId)
 }
