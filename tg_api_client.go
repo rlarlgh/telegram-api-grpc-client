@@ -151,6 +151,22 @@ func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, bu
 	return r.GetMessage()
 }
 
+func (c *TgApiClient) SendReplyInput(botName string, chatId int64, messageId int32, text string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	r, err := c.client.SendReplyInput(ctx, &pb.SendReplyInputRequest{
+		BotName:          botName,
+		ChatId:           chatId,
+		ReplyToMessageId: messageId,
+		Text:             text,
+	})
+	if err != nil {
+		log.Fatalf("could not send reply input: %v", err)
+	}
+	return r.GetMessage()
+}
+
 // SendText 함수는 지정된 챗 ID로 텍스트 메시지를 전송합니다.
 func (c *TgApiClient) SendText(botName string, chatId int64, text string) string {
 	return c.sendMessage(botName, chatId, text, 0)

@@ -25,6 +25,7 @@ type TelegramApiClient interface {
 	StartServerPush(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TelegramApi_StartServerPushClient, error)
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	SendKeyboard(ctx context.Context, in *SendKeyboardRequest, opts ...grpc.CallOption) (*SendKeyboardResponse, error)
+	SendReplyInput(ctx context.Context, in *SendReplyInputRequest, opts ...grpc.CallOption) (*SendReplyInputResponse, error)
 }
 
 type telegramApiClient struct {
@@ -85,6 +86,15 @@ func (c *telegramApiClient) SendKeyboard(ctx context.Context, in *SendKeyboardRe
 	return out, nil
 }
 
+func (c *telegramApiClient) SendReplyInput(ctx context.Context, in *SendReplyInputRequest, opts ...grpc.CallOption) (*SendReplyInputResponse, error) {
+	out := new(SendReplyInputResponse)
+	err := c.cc.Invoke(ctx, "/grpc.telegpb.TelegramApi/SendReplyInput", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TelegramApiServer is the server API for TelegramApi service.
 // All implementations must embed UnimplementedTelegramApiServer
 // for forward compatibility
@@ -92,6 +102,7 @@ type TelegramApiServer interface {
 	StartServerPush(*Empty, TelegramApi_StartServerPushServer) error
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	SendKeyboard(context.Context, *SendKeyboardRequest) (*SendKeyboardResponse, error)
+	SendReplyInput(context.Context, *SendReplyInputRequest) (*SendReplyInputResponse, error)
 	mustEmbedUnimplementedTelegramApiServer()
 }
 
@@ -107,6 +118,9 @@ func (UnimplementedTelegramApiServer) SendMessage(context.Context, *SendMessageR
 }
 func (UnimplementedTelegramApiServer) SendKeyboard(context.Context, *SendKeyboardRequest) (*SendKeyboardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendKeyboard not implemented")
+}
+func (UnimplementedTelegramApiServer) SendReplyInput(context.Context, *SendReplyInputRequest) (*SendReplyInputResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendReplyInput not implemented")
 }
 func (UnimplementedTelegramApiServer) mustEmbedUnimplementedTelegramApiServer() {}
 
@@ -178,6 +192,24 @@ func _TelegramApi_SendKeyboard_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TelegramApi_SendReplyInput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendReplyInputRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TelegramApiServer).SendReplyInput(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.telegpb.TelegramApi/SendReplyInput",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TelegramApiServer).SendReplyInput(ctx, req.(*SendReplyInputRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TelegramApi_ServiceDesc is the grpc.ServiceDesc for TelegramApi service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -192,6 +224,10 @@ var TelegramApi_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendKeyboard",
 			Handler:    _TelegramApi_SendKeyboard_Handler,
+		},
+		{
+			MethodName: "SendReplyInput",
+			Handler:    _TelegramApi_SendReplyInput_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
