@@ -151,6 +151,7 @@ func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, bu
 	return r.GetMessage()
 }
 
+// SendText 함수는 지정된 챗 ID로 텍스트 메시지를 전송합니다.
 func (c *TgApiClient) SendText(botName string, chatId int64, text string) string {
 	return c.sendMessage(botName, chatId, text, 0)
 }
