@@ -117,10 +117,9 @@ func (c *TgApiClient) startConn(host string, port int) {
 	}
 }
 
-func (c *TgApiClient) sendMessage(botName string, chatId int64, text string, replyMsgId int32) string {
+func (c *TgApiClient) sendMessage(botName string, chatId int64, text string, replyMsgId int32) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5) // 5초 타임아웃
 	defer cancel()
-
 	r, err := c.client.SendMessage(ctx, &pb.SendMessageRequest{
 		BotName:          botName,
 		Text:             text,
@@ -128,15 +127,14 @@ func (c *TgApiClient) sendMessage(botName string, chatId int64, text string, rep
 		ReplyToMessageId: replyMsgId,
 	})
 	if err != nil {
-		log.Fatalf("could not send message: %v", err)
+		return "", err
 	}
-	return r.GetMessage()
+	return r.GetMessage(), nil
 }
 
-func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32, replyMsgId int32) string {
+func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32, replyMsgId int32) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-
 	r, err := c.client.SendKeyboard(ctx, &pb.SendKeyboardRequest{
 		BotName:          botName,
 		Text:             text,
@@ -146,12 +144,12 @@ func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, bu
 		RowNum:           rowNum,
 	})
 	if err != nil {
-		log.Fatalf("could not send keyboard: %v", err)
+		return "", err
 	}
-	return r.GetMessage()
+	return r.GetMessage(), nil
 }
 
-func (c *TgApiClient) SendReplyInput(botName string, chatId int64, messageId int32, text string) string {
+func (c *TgApiClient) SendReplyInput(botName string, chatId int64, messageId int32, text string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -162,24 +160,24 @@ func (c *TgApiClient) SendReplyInput(botName string, chatId int64, messageId int
 		Text:             text,
 	})
 	if err != nil {
-		log.Fatalf("could not send reply input: %v", err)
+		return "", err
 	}
-	return r.GetMessage()
+	return r.GetMessage(), nil
 }
 
 // SendText 함수는 지정된 챗 ID로 텍스트 메시지를 전송합니다.
-func (c *TgApiClient) SendText(botName string, chatId int64, text string) string {
+func (c *TgApiClient) SendText(botName string, chatId int64, text string) (string, error) {
 	return c.sendMessage(botName, chatId, text, 0)
 }
 
-func (c *TgApiClient) SendReplyText(botName string, chatId int64, replyMsgId int32, text string) string {
+func (c *TgApiClient) SendReplyText(botName string, chatId int64, replyMsgId int32, text string) (string, error) {
 	return c.sendMessage(botName, chatId, text, replyMsgId)
 }
 
-func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32) string {
+func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32) (string, error) {
 	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, 0)
 }
 
-func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []string, rowNum int32) string {
+func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []string, rowNum int32) (string, error) {
 	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, replyMsgId)
 }
