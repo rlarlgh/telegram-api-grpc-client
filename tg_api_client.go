@@ -132,7 +132,7 @@ func (c *TgApiClient) sendMessage(botName string, chatId int64, text string, rep
 	return r.GetMessage(), nil
 }
 
-func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32, replyMsgId int32) (string, error) {
+func (c *TgApiClient) sendKeyboard(botName string, chatId int64, text string, buttons []*pb.InlineKeyboardData, rowNum int32, replyMsgId int32) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	r, err := c.client.SendKeyboard(ctx, &pb.SendKeyboardRequest{
@@ -174,10 +174,10 @@ func (c *TgApiClient) SendReplyText(botName string, chatId int64, replyMsgId int
 	return c.sendMessage(botName, chatId, text, replyMsgId)
 }
 
-func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, buttons []string, rowNum int32) (string, error) {
+func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, buttons []*pb.InlineKeyboardData, rowNum int32) (string, error) {
 	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, 0)
 }
 
-func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []string, rowNum int32) (string, error) {
+func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []*pb.InlineKeyboardData, rowNum int32) (string, error) {
 	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, replyMsgId)
 }
