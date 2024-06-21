@@ -26,6 +26,7 @@ type TelegramApiClient interface {
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	SendKeyboard(ctx context.Context, in *SendKeyboardRequest, opts ...grpc.CallOption) (*SendKeyboardResponse, error)
 	SendReplyInput(ctx context.Context, in *SendReplyInputRequest, opts ...grpc.CallOption) (*SendReplyInputResponse, error)
+	SendFile(ctx context.Context, opts ...grpc.CallOption) (TelegramApi_SendFileClient, error)
 }
 
 type telegramApiClient struct {
@@ -95,6 +96,40 @@ func (c *telegramApiClient) SendReplyInput(ctx context.Context, in *SendReplyInp
 	return out, nil
 }
 
+func (c *telegramApiClient) SendFile(ctx context.Context, opts ...grpc.CallOption) (TelegramApi_SendFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TelegramApi_ServiceDesc.Streams[1], "/grpc.telegpb.TelegramApi/SendFile", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &telegramApiSendFileClient{stream}
+	return x, nil
+}
+
+type TelegramApi_SendFileClient interface {
+	Send(*SendFileRequestChunk) error
+	CloseAndRecv() (*SendFileResponse, error)
+	grpc.ClientStream
+}
+
+type telegramApiSendFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *telegramApiSendFileClient) Send(m *SendFileRequestChunk) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *telegramApiSendFileClient) CloseAndRecv() (*SendFileResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(SendFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TelegramApiServer is the server API for TelegramApi service.
 // All implementations must embed UnimplementedTelegramApiServer
 // for forward compatibility
@@ -103,6 +138,7 @@ type TelegramApiServer interface {
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	SendKeyboard(context.Context, *SendKeyboardRequest) (*SendKeyboardResponse, error)
 	SendReplyInput(context.Context, *SendReplyInputRequest) (*SendReplyInputResponse, error)
+	SendFile(TelegramApi_SendFileServer) error
 	mustEmbedUnimplementedTelegramApiServer()
 }
 
@@ -121,6 +157,9 @@ func (UnimplementedTelegramApiServer) SendKeyboard(context.Context, *SendKeyboar
 }
 func (UnimplementedTelegramApiServer) SendReplyInput(context.Context, *SendReplyInputRequest) (*SendReplyInputResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendReplyInput not implemented")
+}
+func (UnimplementedTelegramApiServer) SendFile(TelegramApi_SendFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method SendFile not implemented")
 }
 func (UnimplementedTelegramApiServer) mustEmbedUnimplementedTelegramApiServer() {}
 
@@ -210,6 +249,32 @@ func _TelegramApi_SendReplyInput_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TelegramApi_SendFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TelegramApiServer).SendFile(&telegramApiSendFileServer{stream})
+}
+
+type TelegramApi_SendFileServer interface {
+	SendAndClose(*SendFileResponse) error
+	Recv() (*SendFileRequestChunk, error)
+	grpc.ServerStream
+}
+
+type telegramApiSendFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *telegramApiSendFileServer) SendAndClose(m *SendFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *telegramApiSendFileServer) Recv() (*SendFileRequestChunk, error) {
+	m := new(SendFileRequestChunk)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TelegramApi_ServiceDesc is the grpc.ServiceDesc for TelegramApi service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -235,6 +300,11 @@ var TelegramApi_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "StartServerPush",
 			Handler:       _TelegramApi_StartServerPush_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "SendFile",
+			Handler:       _TelegramApi_SendFile_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "grpc/proto/teleg.proto",

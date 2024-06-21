@@ -3,7 +3,10 @@ package tg_api_client
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	pb "github.com/rlarlgh/telegram-api-grpc-client/grpc/telegpb"
@@ -180,4 +183,43 @@ func (c *TgApiClient) SendKeyboard(botName string, chatId int64, text string, bu
 
 func (c *TgApiClient) SendReplyKeyboard(botName string, chatId int64, replyMsgId int32, text string, buttons []*pb.InlineKeyboardData, rowNum int32) (string, error) {
 	return c.sendKeyboard(botName, chatId, text, buttons, rowNum, replyMsgId)
+}
+
+func (c *TgApiClient) SendFile(botName string, chatId int64, filePath string, caption string, replyMsgId int32) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	stream, err := c.client.SendFile(context.Background())
+	if err != nil {
+		return "", err
+	}
+	buf := make([]byte, 1024)
+	for {
+		n, err := file.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
+		if err := stream.Send(&pb.SendFileRequestChunk{
+			BotName:          botName,
+			ChatId:           chatId,
+			Filename:         filepath.Base(filePath),
+			Chunk:            buf[:n],
+			Caption:          caption,
+			ReplyToMessageId: replyMsgId,
+		}); err != nil {
+			return "", err
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return "", err
+	}
+	return resp.GetMessage(), nil
 }
